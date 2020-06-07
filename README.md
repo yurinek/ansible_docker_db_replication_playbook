@@ -7,11 +7,16 @@ The containers can run eather on one or multiple docker hosts. <br> <br>
 
 Some of the Ansible modules which are used: <br> <br>
 
+<h2>white-space: pre:</h2>
+<p class="a">
+
 ansible module              equivalent docker command   action performed <br>
 ----------------------------------------------------------------------------------------------------------------------------------------------------- <br>
 docker_container    ~       docker run                  --> pulls images from yurinek/postgres_master, yurinek/postgres_slave and runs containers <br>
 docker_compose      ~       docker-compose              --> builds the same images from dockerfiles and runs containers with compose <br>
 docker_stack        ~       docker stack deploy         --> pulls images from yurinek/postgres_master, yurinek/postgres_slave and runs swarm services <br> <br>
+
+</p>
 
 Following file structure of group vars illustrates how multiple stacks can be deployed across the same multiple docker hosts.  <br>
 Just one variable for $APP_NAME should be changed inside group_vars/*/vars/main.yml <br> <br>
@@ -25,13 +30,13 @@ group_vars/ <br>
 
 ## How to install
 
-To use the playbook, create the file ~/vault_pw.txt and place there your free to choose ansible-vault password (main password for encryption of sensible data). <br> <br>
+To use the playbook, create the file ~/vault_pw.txt and place there your free to choose ansible-vault password (main password for encryption of sensible data). <br>
 
-Place your target docker host names in the inventory files under inventory_production or inventory_staging directories. <br> <br>
+Place your target docker host names in the inventory files under inventory_production or inventory_staging directories. <br>
 
 To encrypt the database password as string, follow the instructions in group_vars/*/vault/main.yml and place the encrypted value inside this file.  <br>
 Alternatively the whole file can be encrypted. <br>
-For testing purposes a plain text password can be placed instead. <br> <br>
+For testing purposes a plain text password can be placed instead. <br>
 
 To install docker and related packages on target host
 ```hcl
