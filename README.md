@@ -9,24 +9,24 @@ Some of the Ansible modules which are used: <br> <br>
 
 
 
-ansible module   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; equivalent docker command   &nbsp;&nbsp;&nbsp; action performed <br>
+<b>ansible module</b>   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; equivalent docker command   &nbsp;&nbsp;&nbsp; action performed <br>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ <br>
-docker_container  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             docker run    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pulls images from yurinek/postgres_master, yurinek/postgres_slave, runs containers <br>
+<b>docker_container</b>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             docker run    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pulls images from yurinek/postgres_master, yurinek/postgres_slave, runs containers <br>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ <br>
-docker_compose  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  docker-compose    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; builds the same images from dockerfiles, runs containers with compose <br>
+<b>docker_compose</b>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  docker-compose    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; builds the same images from dockerfiles, runs containers with compose <br>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ <br>
-docker_stack  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; docker stack deploy  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pulls images from yurinek/postgres_master, yurinek/postgres_slave, runs swarm services <br> <br>
+<b>docker_stack</b>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; docker stack deploy  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pulls images from yurinek/postgres_master, yurinek/postgres_slave, runs swarm services <br> <br>
 
 
 Following file structure of group vars illustrates how multiple stacks can be deployed across the same bunch of docker hosts.  <br>
-Just one variable for docker_compose_project_name should be changed inside group_vars/*/vars/main.yml <br> <br>
+Just one variable for docker_compose_project_name should be changed inside group_vars/*/vars/main.yml <br> 
 
 group_vars/ <br>
 | <br>
 |--myapp_production <br>
 | <br>
 |--otherapp_production <br>
-
+<br>
 
 ## How to install
 
