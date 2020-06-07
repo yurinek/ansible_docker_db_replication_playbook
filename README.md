@@ -11,9 +11,11 @@ Some of the Ansible modules which are used: <br> <br>
 
 ansible module   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; equivalent docker command   &nbsp;&nbsp;&nbsp; action performed <br>
 ----------------------------------------------------------------------------------------------------------------------------------------------------- <br>
-docker_container  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;                        docker run    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;              pulls images from yurinek/postgres_master, yurinek/postgres_slave and runs containers <br>
-docker_compose  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;              docker-compose    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          builds the same images from dockerfiles and runs containers with compose <br>
-docker_stack  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    docker stack deploy  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;       pulls images from yurinek/postgres_master, yurinek/postgres_slave and runs swarm services <br> <br>
+docker_container  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;                      docker run    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pulls images from yurinek/postgres_master, yurinek/postgres_slave and runs containers <br>
+----------------------------------------------------------------------------------------------------------------------------------------------------- <br>
+docker_compose  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;              docker-compose    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          builds the same images from dockerfiles and runs containers with compose <br>
+----------------------------------------------------------------------------------------------------------------------------------------------------- <br>
+docker_stack  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    docker stack deploy  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;       pulls images from yurinek/postgres_master, yurinek/postgres_slave and runs swarm services <br> <br>
 
 
 Following file structure of group vars illustrates how multiple stacks can be deployed across the same multiple docker hosts.  <br>
