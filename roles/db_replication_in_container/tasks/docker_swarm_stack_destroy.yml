@@ -1,0 +1,42 @@
+---
+# deletes swarm stack configuration
+
+- name: docker_swarm_stack_destroy | Remove stack
+  docker_stack:
+    name: "{{ docker_compose_project_name }}"
+    state: absent
+    # make sure its completely removed
+    absent_retries: 5
+    absent_retries_interval: 6
+  run_once: true
+
+ 
+- name: docker_swarm_stack_destroy | Remove master db volume
+  docker_volume:
+    name:   "{{ docker_compose_project_name }}_master_vol"
+    state:  absent
+    # same as force
+    recreate:  options-changed
+  
+- name: docker_swarm_stack_destroy | Remove slave1 db volume
+  docker_volume:
+    name:   "{{ docker_compose_project_name }}_slave1_vol"
+    state:  absent
+    # same as force
+    recreate:  options-changed
+  
+- name: docker_swarm_stack_destroy | Remove slave2 db volume
+  docker_volume:
+    name:   "{{ docker_compose_project_name }}_slave2_vol"
+    state:  absent
+    # same as force
+    recreate:  options-changed
+
+
+- name: docker_swarm_stack_destroy | Remove secret for db password
+  docker_secret:
+    name: "{{ docker_compose_project_name }}_pg_password"
+    data: "{{ docker_db_password }}"
+    state:  absent
+    force:  yes
+  run_once: true

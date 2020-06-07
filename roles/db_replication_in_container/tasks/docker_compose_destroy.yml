@@ -1,0 +1,23 @@
+---
+# removes 2 containers on one host for 1 master and 1 slave database using docker-compose
+
+
+- name: docker_compose_destroy | Remove containers, volumes, images, network of this project
+  docker_compose:
+    project_src: "{{ docker_compose_project_path }}/db_replication"
+    state: absent
+    remove_images: all
+    remove_orphans: yes
+    remove_volumes: yes
+  register: service_status
+  
+  
+- name: docker_compose_destroy | debug service status
+  debug: msg={{ service_status }}
+  
+
+- name: docker_compose_destroy | Remove docker_compose project directory
+  file: 
+    dest: "{{ docker_compose_project_path }}/db_replication"
+    state: absent
+  

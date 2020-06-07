@@ -1,0 +1,8 @@
+[otherapp_production]
+otherapp-db-p01
+otherapp-db-p02
+otherapp-db-p03
+#[otherapp_production:vars]
+
+[all_apps_hosts_production:children]
+otherapp_production

@@ -1,0 +1,13 @@
+---
+
+- hosts: all
+  become: yes
+  tasks:
+    - import_role:
+        name: docker_install
+
+- hosts: all
+  become: yes
+  tasks:
+    - import_role:
+        name: db_replication_in_container

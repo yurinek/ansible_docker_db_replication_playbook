@@ -1,0 +1,66 @@
+---
+
+- name: docker_container_destroy | Remove a postgres master db container
+  docker_container:
+    name: "{{ docker_master_container }}"
+    state: absent
+  
+- name: docker_container_destroy | Remove a postgres slave1 db container
+  docker_container:
+    name: "{{ docker_slave1_container }}"
+    state: absent
+
+- name: docker_container_destroy | Remove a postgres slave2 db container
+  docker_container:
+    name: "{{ docker_slave2_container }}"
+    state: absent
+  
+- name: docker_container_destroy | Remove master db volume
+  docker_volume:
+    name:   postgres_12_master
+    state:  absent
+  
+- name: docker_container_destroy | Remove slave1 db volume
+  docker_volume:
+    name:   postgres_12_slave1
+    state:  absent
+  
+- name: docker_container_destroy | Remove slave2 db volume
+  docker_volume:
+    name:   postgres_12_slave2
+    state:  absent
+  
+- name: docker_container_destroy | Remove a docker network
+  docker_network:
+    name: "{{ docker_network_name }}"
+    state: absent
+
+- name: docker_container_destroy | Check if master container was removed
+  docker_container_info:
+   name: "{{ docker_master_container }}"
+  register: result
+
+- name: docker_container_destroy | Something went wrong, master container still exists
+  debug:
+    var: result.container.Name
+  when: result.exists
+
+- name: docker_container_destroy | Check if slave1 container was removed
+  docker_container_info:
+   name: "{{ docker_slave1_container }}"
+  register: result
+
+- name: docker_container_destroy | Something went wrong, slave1 container still exists
+  debug:
+    var: result.container.Name
+  when: result.exists
+
+- name: docker_container_destroy | Check if slave2 container was removed
+  docker_container_info:
+   name: "{{ docker_slave2_container }}"
+  register: result
+
+- name: docker_container_destroy | Something went wrong, slave2 container still exists
+  debug:
+    var: result.container.Name
+  when: result.exists

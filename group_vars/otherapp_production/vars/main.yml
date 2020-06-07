@@ -1,0 +1,32 @@
+
+---
+# production for docker_swarm_stack task
+
+
+docker_image_master_db:         yurinek/postgres_master
+docker_image_slave_db:          yurinek/postgres_slave
+docker_db_image_version:        12
+docker_db_port:                 5432
+docker_db_password:             "{{ vault_docker_db_password }}"
+docker_db:                      otherapp_database
+docker_pgdata:                  "/data/postgresql/{{ docker_db_image_version }}/{{ docker_db_cluster_name }}"
+
+
+# following vars can also be in separate files for individual hosts under host_vars, 
+# but in case of a big number of host groups it will get messy, so lets keep them here inside a host group
+host_name_master:               otherapp-db-p01
+host_name_slave1:               otherapp-db-p02
+host_name_slave2:               otherapp-db-p03
+
+docker_compose_project_name:    otherapp
+docker_compose_project_path:    "/home/{{ target_user }}/deployment"
+
+# needs to be dict and true needs to be of type string
+docker_master_node_label:
+    - { "master_db_host": "true" }
+docker_slave1_node_label:       
+    - { "slave1_db_host": "true" }
+docker_slave2_node_label:       
+    - { "slave2_db_host": "true" }
+ 
+    

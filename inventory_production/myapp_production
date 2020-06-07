@@ -1,0 +1,8 @@
+[myapp_production]
+myapp-db-p01
+myapp-db-p02
+myapp-db-p03
+#[myapp_production:vars]
+
+[all_apps_hosts_production:children]
+myapp_production

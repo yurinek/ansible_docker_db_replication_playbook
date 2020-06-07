@@ -1,0 +1,5 @@
+---
+- name: Install packages
+  import_tasks: apt.yml
+  tags:
+    - apt

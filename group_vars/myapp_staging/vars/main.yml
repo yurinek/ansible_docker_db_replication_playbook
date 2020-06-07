@@ -1,0 +1,21 @@
+
+---
+# staging for docker_container and docker_compose tasks
+
+docker_network_name:            db_replication_net
+docker_image_master_db:         yurinek/postgres_master
+docker_image_slave_db:          yurinek/postgres_slave
+docker_db_image_version:        12
+# following variable can only be changed if using with docker-compose, as the images need to be recreated
+docker_db_cluster_name:         rep
+docker_db_port:                 5432
+docker_db_password:             "{{ vault_docker_db_password }}"
+docker_db:                      myapp_database
+docker_pgdata:                  "/data/postgresql/{{ docker_db_image_version }}/{{ docker_db_cluster_name }}"
+docker_master_container:        postgres_master
+docker_slave1_container:        postgres_slave1
+docker_slave2_container:        postgres_slave2
+docker_compose_project_name:    postgres
+docker_compose_project_path:    "/home/{{ target_user }}/deployment"
+
+

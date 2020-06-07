@@ -1,0 +1,93 @@
+---
+
+- debug:
+    msg: "{{ hostvars[inventory_hostname].ansible_distribution }}"
+- debug:
+    msg: "{{ hostvars[inventory_hostname].ansible_distribution_major_version }}"
+- debug:
+    msg: "{{ hostvars[inventory_hostname].ansible_distribution_version }}"
+
+- name: Apt | Install general packages
+  become: yes
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - apt-transport-https 
+    - ca-certificates 
+    - curl 
+    - gnupg-agent 
+    - software-properties-common
+    - python-yaml
+    - python-jsondiff
+    - python-apt
+    - containerd.io
+    - aptitude
+    - locate
+    - curl
+    - telnet
+    - postgresql-client-10
+    - python-psycopg2
+
+
+- name: Apt | Add docker apt signing key for Debian
+  become: yes
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+  tags:
+    - apt
+    - install
+  when: ansible_distribution == 'Debian'
+
+
+- name: Apt | Add docker apt signing key for Ubuntu
+  become: yes
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  tags:
+    - apt
+    - install
+  when: ansible_distribution == 'Ubuntu' or ansible_distribution == 'Linux Mint'
+
+
+- name: Apt | Add docker apt repository for Debian
+  become: yes
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ debian_release }} stable"
+    state: present
+    filename: docker
+  tags:
+    - apt
+    - install
+  when: ansible_distribution == 'Debian'
+
+
+- name: Apt | Add docker apt repository for Ubuntu
+  become: yes
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ubuntu_release }} stable"
+    state: present
+    filename: docker
+  tags:
+    - apt
+    - install
+  when: ansible_distribution == 'Ubuntu' or ansible_distribution == 'Linux Mint'
+
+
+- name: Apt | Install needed docker packages
+  become: yes
+  package:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  loop:
+    - docker-ce 
+    - docker-ce-cli 
+    - docker-compose
+  tags:
+    - apt
+    - install
+
+

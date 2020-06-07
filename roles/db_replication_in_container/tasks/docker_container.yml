@@ -1,0 +1,231 @@
+---
+# pulls 2 images from registry
+# creates 3 containers on one host for master and 2 slave databases
+# can be used in staging, qa, test or development environment
+
+- name: docker_container | Create a docker network
+  docker_network:
+    name: "{{ docker_network_name }}"
+  
+
+
+- name: docker_container | Check if master container exists
+  docker_container_info:
+   name: "{{ docker_master_container }}"
+  register: master_result
+
+- name: docker_container | Find next free port on host for master db
+  become: yes
+  shell: |
+    # store used ports in an array
+    used_ports=$(netstat -tulpn | grep LISTEN |awk '{print $4}' |cut -d':' -f2- |sed 's/://g')
+    # loop over port range for postgres and filter used ports to display next free port
+    for i in $(seq 5432 5499 )
+      do
+        if [[ ! " ${used_ports[@]} " =~ "${i}" ]]; then
+          # display the first found (smallest) port if it is not inside used_ports
+          echo "$i"
+          # we only need the first free port, so break will exit the loop
+          break
+        fi
+      done
+  args:
+    executable: /bin/bash 
+  register: next_free_postgres_port_on_host
+  # dont run it if container already exists, it would cause recreation of container with new free port to be exposed
+  when: master_result.exists == False
+
+- set_fact:
+    host_db_port: "{{ next_free_postgres_port_on_host.stdout }}"
+  when: master_result.exists == False
+
+- name: docker_container | Create a postgres master db container
+  docker_container:
+    name: "{{ docker_master_container }}"
+    image: "{{ docker_image_master_db }}:{{ docker_db_image_version }}"
+    # if using a command other then bash or sleep infinity then container stops
+    command: "sleep infinity"
+    state: started
+    ports:
+      - "{{ host_db_port }}:{{ docker_db_port }}"
+    volumes: 
+      - "postgres_12_master:{{ docker_pgdata }}"
+    env:
+      POSTGRES_PASSWORD: "{{ docker_db_password }}"
+      RUNTIME_ENV_PG_DB: "{{ docker_db }}"
+    networks:
+      - name: "{{ docker_network_name }}"
+    healthcheck:
+      # if check was not successful then false (exit 1) will be in stderr
+      test: "pg_isready -h localhost -p {{ docker_db_port }} -U postgres || false"
+      interval: 5s
+      timeout: 2s
+      retries: 60
+      start_period: 30s
+  when: master_result.exists == False
+
+
+- name: docker_container | Check if slave1 container exists
+  docker_container_info:
+   name: "{{ docker_slave1_container }}"
+  register: slave1_result
+
+- name: docker_container | Find next free port on host for slave1 db
+  become: yes
+  shell: |
+    # store used ports in an array
+    used_ports=$(netstat -tulpn | grep LISTEN |awk '{print $4}' |cut -d':' -f2- |sed 's/://g')
+    # loop over port range for postgres and filter used ports to display next free port
+    for i in $(seq 5432 5499 )
+      do
+        if [[ ! " ${used_ports[@]} " =~ "${i}" ]]; then
+          # display the first found (smallest) port if it is not inside used_ports
+          echo "$i"
+          # we only need the first free port, so break will exit the loop
+          break
+        fi
+      done
+  args:
+    executable: /bin/bash 
+  register: next_free_postgres_port_on_host
+  # dont run it if container already exists, it would cause recreation of container with new free port to be exposed
+  when: slave1_result.exists == False
+
+- set_fact:
+    host_db_port: "{{ next_free_postgres_port_on_host.stdout }}"
+  when: slave1_result.exists == False
+
+- name: docker_container | Create a postgres slave1 db container
+  docker_container:
+    name: "{{ docker_slave1_container }}"
+    image: "{{ docker_image_slave_db }}:{{ docker_db_image_version }}"
+    # if using a command other then sleep infinity then container stops
+    command: "sleep infinity"
+    state: started
+    ports:
+      - "{{ host_db_port }}:{{ docker_db_port }}"
+    volumes: 
+      - "postgres_12_slave1:{{ docker_pgdata }}"
+    env:
+      POSTGRES_PASSWORD:        "{{ docker_db_password }}"
+      RUNTIME_ENV_PG_DB:        "{{ docker_db }}"
+      RUNTIME_ENV_MASTER_HOST:  "{{ docker_master_container }}"
+    networks:
+      - name: "{{ docker_network_name }}"
+    healthcheck:
+      # if check was not successful then false (exit 1) will be in stderr
+      test: "pg_isready -h localhost -p {{ docker_db_port }} -U postgres || false"
+      interval: 5s
+      timeout: 2s
+      retries: 60
+      start_period: 30s      
+  when: slave1_result.exists == False
+
+
+- name: docker_container | Check if slave2 container exists
+  docker_container_info:
+   name: "{{ docker_slave2_container }}"
+  register: slave2_result
+
+- name: docker_container | Find next free port on host for slave2 db
+  become: yes
+  shell: |
+    # store used ports in an array
+    used_ports=$(netstat -tulpn | grep LISTEN |awk '{print $4}' |cut -d':' -f2- |sed 's/://g')
+    # loop over port range for postgres and filter used ports to display next free port
+    for i in $(seq 5432 5499 )
+      do
+        if [[ ! " ${used_ports[@]} " =~ "${i}" ]]; then
+          # display the first found (smallest) port if it is not inside used_ports
+          echo "$i"
+          # we only need the first free port, so break will exit the loop
+          break
+        fi
+      done
+  args:
+    executable: /bin/bash 
+  register: next_free_postgres_port_on_host
+  # dont run it if container already exists, it would cause recreation of container with new free port to be exposed
+  when: slave2_result.exists == False
+
+- set_fact:
+    host_db_port: "{{ next_free_postgres_port_on_host.stdout }}"
+  when: slave2_result.exists == False
+
+- name: docker_container | Create a postgres slave2 db container
+  docker_container:
+    name: "{{ docker_slave2_container }}"
+    image: "{{ docker_image_slave_db }}:{{ docker_db_image_version }}"
+    # if using a command other then sleep infinity then container stops
+    command: "sleep infinity"
+    state: started
+    ports:
+      - "{{ host_db_port }}:{{ docker_db_port }}"
+    volumes: 
+      - "postgres_12_slave2:{{ docker_pgdata }}"
+    env:
+      POSTGRES_PASSWORD:        "{{ docker_db_password }}"
+      RUNTIME_ENV_PG_DB:        "{{ docker_db }}"
+      RUNTIME_ENV_MASTER_HOST:  "{{ docker_master_container }}"
+    networks:
+      - name: "{{ docker_network_name }}"
+    healthcheck:
+      # if check was not successful then false (exit 1) will be in stderr
+      test: "pg_isready -h localhost -p {{ docker_db_port }} -U postgres || false"
+      interval: 5s
+      timeout: 2s
+      retries: 60
+      start_period: 30s   
+  when: slave2_result.exists == False
+
+
+
+- name: docker_container | Get infos on master container
+  docker_container_info:
+   name: "{{ docker_master_container }}"
+  register: result
+  
+  
+- name: Print name of master container
+  debug:
+    var: result.container.Name
+  when: result.exists
+
+- name: Print state of master container
+  debug:
+    var: result.container.State
+  when: result.exists
+
+
+- name: docker_container | Get infos on slave1 container
+  docker_container_info:
+   name: "{{ docker_slave1_container }}"
+  register: result
+  
+
+- name: Print name of slave1 container
+  debug:
+    var: result.container.Name
+  when: result.exists
+
+- name: Print state of slave1 container
+  debug:
+    var: result.container.State
+  when: result.exists
+
+
+- name: docker_container | Get infos on slave2 container
+  docker_container_info:
+   name: "{{ docker_slave2_container }}"
+  register: result
+  
+
+- name: Print name of slave2 container
+  debug:
+    var: result.container.Name
+  when: result.exists
+
+- name: Print state of slave2 container
+  debug:
+    var: result.container.State
+  when: result.exists

@@ -1,0 +1,304 @@
+---
+# pulls 2 images from registry
+# creates 3 containers on 3 hosts for 1 master and 2 slave databases using docker swarm stack
+# is ready for production: highly available, secrets are stored encrypted
+
+
+- name: docker_swarm_stack | Init a new swarm with default parameters
+  docker_swarm:
+    state: present
+  # run it on first host
+  run_once: true
+
+
+- name: docker_swarm_stack | Get info on Docker Swarm
+  docker_swarm_info:
+    nodes: yes
+  ignore_errors: yes
+  register: swarm_state
+
+
+- name: docker_swarm_stack | Inform about basic flags
+  debug:
+    msg: |
+      Was able to talk to docker daemon: {{ swarm_state.can_talk_to_docker }}
+      Docker in Swarm mode: {{ swarm_state.docker_swarm_active }}
+      This is a Manager node: {{ swarm_state.docker_swarm_manager }}
+
+ 
+- name: docker_swarm_stack | Delegate JoinToken of first swarm manager node as fact to other hosts in inventory 
+  set_fact:
+    token_to_join_as_manager: "{{ swarm_state.swarm_facts.JoinTokens.Manager }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ ansible_play_hosts }}"
+  when: swarm_state.docker_swarm_active == True
+
+
+- name: docker_swarm_stack | Delegate ip address of first swarm manager node as fact to other hosts in inventory 
+  set_fact:
+    first_manager_ip: "{{ ansible_default_ipv4.address }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ ansible_play_hosts }}"
+  when: swarm_state.docker_swarm_active == True
+
+
+- name: docker_swarm_stack | Add Manager nodes
+  docker_swarm:
+    state: join
+    advertise_addr: "{{ ansible_default_ipv4.address }}"
+    join_token: "{{ token_to_join_as_manager }}"
+    remote_addrs: [ '{{ first_manager_ip }}:2377' ]
+  when: swarm_state.docker_swarm_active == False
+
+
+# labels will be added to existing ones, this way multiple different stack configurations can be deployed to same nodes
+- name: docker_swarm_stack | Assign labels to master db swarm node
+  docker_node:
+    hostname: "{{ host_name_master }}"
+    labels:
+      "{{ item }}"
+  loop: "{{ docker_master_node_label }}"
+  run_once: true  
+
+
+- name: docker_swarm_stack | Assign labels to slave1 db swarm node
+  docker_node:
+    hostname: "{{ host_name_slave1 }}"
+    labels:
+      "{{ item }}"
+  loop: "{{ docker_slave1_node_label }}"
+  run_once: true
+
+
+- name: docker_swarm_stack | Assign labels to slave2 db swarm node
+  docker_node:
+    hostname: "{{ host_name_slave2 }}"
+    labels:
+      "{{ item }}"
+  loop: "{{ docker_slave2_node_label }}"
+  run_once: true
+
+
+- name: docker_swarm_stack | Copy docker_compose yml file
+  copy: 
+    src: db_replication_swarm
+    dest: "{{ docker_compose_project_path }}"
+    mode: u=rw,g=r,o=r
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+  
+
+- name: docker_swarm_stack | Create secret for db password
+  docker_secret:
+    name: "{{ docker_compose_project_name }}_pg_password"
+    data: "{{ docker_db_password }}"
+    state: present
+  run_once: true
+  
+
+- name: docker_swarm_stack | Check if master service exists
+  docker_swarm_service_info:
+   name: "{{ docker_compose_project_name }}_master"
+  run_once: true 
+  register: master_result
+
+- name: docker_swarm_stack | Check if slave1 service exists
+  docker_swarm_service_info:
+   name: "{{ docker_compose_project_name }}_slave1"
+  run_once: true
+  register: slave1_result
+
+- name: docker_swarm_stack | Check if slave2 service exists
+  docker_swarm_service_info:
+   name: "{{ docker_compose_project_name }}_slave2"
+  run_once: true
+  register: slave2_result
+
+
+- name: docker_container | Find next free port on host for master db
+  become: yes
+  shell: |
+    # store used ports in an array
+    used_ports=$(netstat -tulpn | grep LISTEN |awk '{print $4}' |cut -d':' -f2- |sed 's/://g')
+    # loop over port range for postgres and filter used ports to display next free port
+    for i in $(seq 5432 5499 )
+      do
+        if [[ ! " ${used_ports[@]} " =~ "${i}" ]]; then
+          # display the first found (smallest) port if it is not inside used_ports
+          echo "$i"
+          # we only need the first free port, so break will exit the loop
+          break
+        fi
+      done
+  args:
+    executable: /bin/bash 
+  register: next_free_postgres_port_on_host
+  # dont run it if service already exists, it would cause recreation of service with new free port to be exposed
+  when: master_result.exists == False and inventory_hostname == host_name_master
+
+
+- set_fact:
+    host_db_port_master: "{{ next_free_postgres_port_on_host.stdout }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ ansible_play_hosts }}"
+  when: master_result.exists == False and inventory_hostname == host_name_master
+
+
+- name: docker_container | Find next free port on host for slave1 db
+  become: yes
+  shell: |
+    # store used ports in an array
+    used_ports=$(netstat -tulpn | grep LISTEN |awk '{print $4}' |cut -d':' -f2- |sed 's/://g')
+    # loop over port range for postgres and filter used ports to display next free port
+    for i in $(seq 5432 5499 )
+      do
+        # in swarms overlay network we need unique ports for each db across all the nodes, thats why we exclude already taken 1 port
+        if [[ ! " ${used_ports[@]} {{ host_db_port_master }} " =~ "${i}" ]]; then
+          # display the first found (smallest) port if it is not inside used_ports
+          echo "$i"
+          # we only need the first free port, so break will exit the loop
+          break
+        fi
+      done
+  args:
+    executable: /bin/bash 
+  register: next_free_postgres_port_on_host
+  # dont run it if service already exists, it would cause recreation of service with new free port to be exposed
+  when: slave1_result.exists == False and inventory_hostname == host_name_slave1
+
+
+- set_fact:
+    host_db_port_slave1: "{{ next_free_postgres_port_on_host.stdout }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ ansible_play_hosts }}"
+  when: slave1_result.exists == False and inventory_hostname == host_name_slave1
+
+
+- name: docker_container | Find next free port on host for slave2 db
+  become: yes
+  shell: |
+    # store used ports in an array
+    used_ports=$(netstat -tulpn | grep LISTEN |awk '{print $4}' |cut -d':' -f2- |sed 's/://g')
+    # loop over port range for postgres and filter used ports to display next free port
+    for i in $(seq 5432 5499 )
+      do
+        # in swarms overlay network we need unique ports for each db across all the nodes, thats why we exclude already taken 2 ports
+        if [[ ! " ${used_ports[@]} {{ host_db_port_master }} {{ host_db_port_slave1 }} " =~ "${i}" ]]; then
+          # display the first found (smallest) port if it is not inside used_ports
+          echo "$i"
+          # we only need the first free port, so break will exit the loop
+          break
+        fi
+      done
+  args:
+    executable: /bin/bash 
+  register: next_free_postgres_port_on_host
+  # dont run it if service already exists, it would cause recreation of service with new free port to be exposed
+  when: slave2_result.exists == False and inventory_hostname == host_name_slave2
+
+
+- set_fact:
+    host_db_port_slave2: "{{ next_free_postgres_port_on_host.stdout }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ ansible_play_hosts }}"
+  when: slave2_result.exists == False and inventory_hostname == host_name_slave2
+
+
+- name: docker_swarm_stack | Show host_db_port_master
+  debug: 
+    msg="{{ host_db_port_master }}"
+  when: master_result.exists == False and inventory_hostname == host_name_master
+  
+
+- name: docker_swarm_stack | Show host_db_port_slave1
+  debug: 
+    msg="{{ host_db_port_slave1 }}"
+  when: master_result.exists == False and inventory_hostname == host_name_slave1
+
+
+- name: docker_swarm_stack | Show host_db_port_slave2
+  debug: 
+    msg="{{ host_db_port_slave2 }}"
+  when: master_result.exists == False and inventory_hostname == host_name_slave2
+
+
+- name: docker_swarm_stack | Deploy stack from compose file
+  docker_stack:
+      state: present
+      name: "{{ docker_compose_project_name }}"
+      compose:
+        - "{{ docker_compose_project_path }}/db_replication_swarm/docker-compose.yml"
+  run_once: true
+  when: master_result.exists == False and slave1_result.exists == False and slave2_result.exists == False
+  # specify the environment for a single task
+  environment:
+    ENV_PG_VERSION_PULL: "{{ docker_db_image_version }}"
+    ENV_PG_DB: "{{ docker_db }}"
+    ENV_PG_PORT: "{{ docker_db_port }}"
+    ENV_APP_NAME: "{{ docker_compose_project_name }}"
+    ENV_MASTER_HOST_PORT: "{{ host_db_port_master }}"
+    ENV_SLAVE1_HOST_PORT: "{{ host_db_port_slave1 }}" 
+    ENV_SLAVE2_HOST_PORT: "{{ host_db_port_slave2 }}" 
+
+
+- name: docker_swarm_stack | Wait for containers to be up
+  debug:
+    msg:
+    - "In case image gets pulled, it can take some time..."
+  run_once: true
+  # wait only in the same ansible run when stack deployed
+  when: master_result.exists == False and slave1_result.exists == False and slave2_result.exists == False
+
+
+- name: docker_swarm_stack | Waiting...
+  wait_for:
+    port: "{{ host_db_port_slave1 }}" 
+    delay: 10
+  run_once: true
+  # wait only in the same ansible run when stack deployed
+  when: master_result.exists == False and slave1_result.exists == False and slave2_result.exists == False
+
+
+- name: docker_swarm_stack | Wait for db replication to be ready
+  pause:
+    seconds: 10
+  # wait only in the same ansible run when stack deployed
+  when: master_result.exists == False and slave1_result.exists == False and slave2_result.exists == False
+
+
+- name: docker_swarm_stack | Get info from slave1 service
+  docker_swarm_service_info:
+    name: "{{ docker_compose_project_name }}_slave1"
+  register: slave1_state
+
+
+- name: docker_swarm_stack | Store exposed port of slave1 db
+  set_fact:
+      exposed_port_slave1: "{{item.value}}"
+  with_dict: "{{ slave1_state.service.Endpoint.Ports }}"
+  when: '"PublishedPort" in item.key' 
+
+
+- name: docker_swarm_stack | Query test data in slave db to verify successful replication
+  postgresql_query:
+    login_host: localhost
+    db: "{{ docker_db }}"
+    port: "{{ exposed_port_slave1 }}"
+    login_user: postgres
+    login_password: "{{ docker_db_password }}"
+    query: SELECT * FROM test
+  register: replication_test
+
+
+- name: docker_swarm_stack | Show replication test data results
+  debug:
+    # limit to first row in table
+    msg: "{{ replication_test.query_result[0] }}"
+
+
+

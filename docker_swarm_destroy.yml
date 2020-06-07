@@ -1,0 +1,11 @@
+---
+
+- hosts: all
+  become: yes
+  tasks:
+    - import_role:
+        name:       db_replication_in_container 
+        tasks_from: docker_swarm_destroy
+
+
+

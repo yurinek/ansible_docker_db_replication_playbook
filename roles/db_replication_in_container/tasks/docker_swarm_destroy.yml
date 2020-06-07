@@ -1,0 +1,31 @@
+---
+# deletes swarm configuration
+
+- name: docker_swarm_stack_destroy | Remove manager from swarm
+  docker_swarm:
+    state: remove
+    node_id: "{{ inventory_hostname_short }}"
+    force: true
+  ignore_errors: yes
+
+- name: docker_swarm_stack_destroy | Leave swarm
+  docker_swarm:
+    state: absent
+    force: true
+  ignore_errors: yes
+
+- name: docker_swarm_stack_destroy | Getting info should fail if Swarm disabled
+  docker_swarm_info:
+    nodes: yes
+  ignore_errors: yes
+  no_log: True
+  register: swarm_state
+
+- name: docker_swarm_stack_destroy | Inform about basic flags
+  debug:
+    msg: |
+      Was able to talk to docker daemon: {{ swarm_state.can_talk_to_docker }}
+      Docker in Swarm mode: {{ swarm_state.docker_swarm_active }}
+      This is a Manager node: {{ swarm_state.docker_swarm_manager }}
+
+ 

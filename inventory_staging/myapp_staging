@@ -1,0 +1,6 @@
+[myapp_staging]
+myapp-db-s01
+#[myapp_staging:vars]
+
+[all_apps_hosts_staging:children]
+myapp_staging
