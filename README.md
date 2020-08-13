@@ -18,7 +18,7 @@ Some of the Ansible modules which are used: <br> <br>
 <b>docker_stack</b>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; docker stack deploy  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pulls images from yurinek/postgres_master, yurinek/postgres_slave, runs swarm services <br> <br>
 
 
-Following file structure of group vars illustrates how multiple stacks can be deployed across the same bunch of docker hosts.  <br>
+Following file structure of group vars illustrates how multiple stacks can be deployed across a bunch of docker hosts.  <br>
 Just one variable for docker_compose_project_name should be changed inside group_vars/*/vars/main.yml <br> 
 
 group_vars/ <br>
